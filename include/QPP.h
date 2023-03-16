@@ -16,9 +16,9 @@ namespace Xceed {
         QPP();
 
         ~QPP() {
-            delete bit_rep_plain_text;
-            delete bit_rep_cipher_text;
-            delete seed;
+            delete[] bit_rep_plain_text;
+            delete[] bit_rep_cipher_text;
+            delete[] seed;
         }
 
         uint8_t* encrypt();
@@ -32,12 +32,15 @@ namespace Xceed {
 
     protected:
         void generateMatrix();
+        void generateInvMatrix();
 
     private:
         int text_size;
-        int steps;
 
-        uint8_t pmat_list[M][mat_size];
+        // uint8_t pmat_list[M][mat_size];
+        std::vector<std::vector<uint8_t>> pmat_list;
+        // uint8_t inv_pmat_list[M][mat_size];
+        std::vector<std::vector<uint8_t>> inv_pmat_list;
 
         uint8_t* bit_rep_plain_text;
         uint8_t* bit_rep_cipher_text;

@@ -17,6 +17,7 @@ int main() {
     uint8_t* seed = &seed_vec[0];
 
     uint8_t temp[] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0b00100000, 0b01010111, 0b01101111, 0b01110010, 0b01101100, 0b01100100};
+    // Expected cipher a8 c7 de e9   66 64 09 fb   eb 41 80 c5
 
     Xceed::QPP qpp;
     qpp.setPlainText(temp, text_size);

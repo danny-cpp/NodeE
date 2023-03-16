@@ -6,6 +6,7 @@ using namespace Xceed::Constants;
 
 Xceed::QPP::QPP() {
     generateMatrix();
+    generateInvMatrix();
 }
 
 uint8_t* Xceed::QPP::encrypt() {
@@ -16,7 +17,7 @@ uint8_t* Xceed::QPP::encrypt() {
 
             uint8_t cipher_byte_mask = 0;
             int moving_mask = mask >> (n * j);
-            int dispatch_index = ((i * right_side_offset) + j) % M;
+            int dispatch_index = ((i * (8/n)) + j) % M;
 
             // Extracting
             int basis_select = (*(bit_rep_plain_text + byte_ptr) & moving_mask) >> right_side_offset;
@@ -43,11 +44,29 @@ void Xceed::QPP::generateMatrix() {
     uint8_t m4[mat_size] = {0, 3, 2, 1};
     uint8_t m5[mat_size] = {0, 3, 1, 2};
 
-    std::memcpy(pmat_list[0], m1, sizeof(uint8_t)*mat_size);
-    std::memcpy(pmat_list[1], m2, sizeof(uint8_t)*mat_size);
-    std::memcpy(pmat_list[2], m3, sizeof(uint8_t)*mat_size);
-    std::memcpy(pmat_list[3], m4, sizeof(uint8_t)*mat_size);
-    std::memcpy(pmat_list[4], m5, sizeof(uint8_t)*mat_size);
+    pmat_list.emplace_back(std::vector<uint8_t>({1, 2, 0, 3}));
+    pmat_list.emplace_back(std::vector<uint8_t>({2, 1, 0, 3}));
+    pmat_list.emplace_back(std::vector<uint8_t>({1, 3, 2, 0}));
+    pmat_list.emplace_back(std::vector<uint8_t>({0, 3, 2, 1}));
+    pmat_list.emplace_back(std::vector<uint8_t>({0, 3, 1, 2}));
+
+    // std::memcpy(pmat_list[0], m1, sizeof(uint8_t)*mat_size);
+    // std::memcpy(pmat_list[1], m2, sizeof(uint8_t)*mat_size);
+    // std::memcpy(pmat_list[2], m3, sizeof(uint8_t)*mat_size);
+    // std::memcpy(pmat_list[3], m4, sizeof(uint8_t)*mat_size);
+    // std::memcpy(pmat_list[4], m5, sizeof(uint8_t)*mat_size);
+}
+
+void Xceed::QPP::generateInvMatrix() {
+    for (int i = 0; i < M; i++) {
+        uint8_t* temp = new uint8_t[mat_size];
+        for (int row = 0; row < mat_size; row++) {
+            uint8_t col = pmat_list[i][row];
+            temp[col] = row;
+        }
+        inv_pmat_list.emplace_back(temp, temp + mat_size);
+        delete[] temp;
+    }
 }
 
 int Xceed::QPP::getStringLength() {
@@ -80,3 +99,4 @@ void Xceed::QPP::setSeed(const uint8_t* in_seed, int seed_size) {
 
     std::memcpy(seed, in_seed, seed_size);
 }
+

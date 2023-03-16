@@ -22,9 +22,12 @@ namespace Xceed {
         }
 
         uint8_t* encrypt();
+        uint8_t* decrypt();
 
         void setPlainText(std::string &plain_text);
         void setPlainText(const uint8_t* plain_text, int in_text_size);
+
+        void setCipherText(const uint8_t* cipher_text, int in_text_size);
 
         void setSeed(const uint8_t* in_seed, int seed_size);
 

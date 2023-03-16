@@ -36,6 +36,33 @@ uint8_t* Xceed::QPP::encrypt() {
     return bit_rep_cipher_text;
 }
 
+
+uint8_t* Xceed::QPP::decrypt() {
+    for (int i = 0, byte_ptr = 0; i < text_size; i++, byte_ptr++) {
+
+        for (int right_side_offset = 8 - n, j = 0; right_side_offset >= 0; right_side_offset -= n, j++) {
+
+            uint8_t plain_text_byte_mask = 0;
+            int moving_mask = mask >> (n * j);
+            int dispatch_index = ((i * (8/n)) + j) % M;
+
+            // Extracting
+            int basis_select = (*(bit_rep_cipher_text + byte_ptr) & moving_mask) >> right_side_offset;
+
+            // Writing byte
+            uint8_t acquired_value = inv_pmat_list[dispatch_index][basis_select];
+            plain_text_byte_mask = (uint8_t) acquired_value << right_side_offset;
+
+            // Writing cipher
+            *(bit_rep_plain_text + byte_ptr) &= ~moving_mask;
+            *(bit_rep_plain_text + byte_ptr) |= (plain_text_byte_mask & moving_mask);
+
+        }
+    }
+
+    return bit_rep_plain_text;
+}
+
 void Xceed::QPP::generateMatrix() {
 
     uint8_t m1[mat_size] = {1, 2, 0, 3};
@@ -99,4 +126,15 @@ void Xceed::QPP::setSeed(const uint8_t* in_seed, int seed_size) {
 
     std::memcpy(seed, in_seed, seed_size);
 }
+
+void Xceed::QPP::setCipherText(const uint8_t *cipher_text, int in_text_size) {
+
+    bit_rep_plain_text = new uint8_t[in_text_size];
+    bit_rep_cipher_text = new uint8_t[in_text_size];
+
+    std::memcpy(bit_rep_cipher_text, cipher_text, in_text_size);
+    this->text_size = in_text_size;
+
+}
+
 

@@ -24,6 +24,10 @@ int main() {
     qpp.setSeed(seed, text_size);
     uint8_t* cipher = qpp.encrypt();
 
+    Xceed::QPP qpp2;
+    uint8_t ciphered[] = {0xa8, 0xc7, 0xde, 0xe9, 0x66, 0x64, 0x09, 0xfb, 0xeb, 0x41, 0x80, 0xc5};
+    qpp2.setCipherText(cipher, text_size);
+    uint8_t* reversed = qpp2.decrypt();
 
     return 0;
 }

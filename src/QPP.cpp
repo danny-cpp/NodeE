@@ -18,6 +18,7 @@ Xceed::QPP::QPP(uint8_t *in_seed) {
 
     generateMatrix();
     generateInvMatrix();
+    generatingDispatchSequence();
 }
 
 uint8_t* Xceed::QPP::encrypt() {
@@ -33,6 +34,7 @@ uint8_t* Xceed::QPP::encrypt() {
             uint8_t cipher_byte_mask = 0;
             int moving_mask = mask >> (n * j);
             int dispatch_index = ((i * (8/n)) + j) % M;
+            dispatch_index = dispatch_sequence[dispatch_index];
 
             // Extracting
             int basis_select = (*(bit_rep_plain_text + byte_ptr) & moving_mask) >> right_side_offset;
@@ -62,6 +64,7 @@ uint8_t* Xceed::QPP::decrypt() {
             uint8_t plain_text_byte_mask = 0;
             int moving_mask = mask >> (n * j);
             int dispatch_index = ((i * (8/n)) + j) % M;
+            dispatch_index = dispatch_sequence[dispatch_index];
 
             // Extracting
             int basis_select = (*(bit_rep_cipher_text + byte_ptr) & moving_mask) >> right_side_offset;
@@ -162,6 +165,14 @@ void Xceed::QPP::setCipherText(const uint8_t *cipher_text, int in_text_size) {
 
     std::memcpy(bit_rep_cipher_text, cipher_text, in_text_size);
     this->text_size = in_text_size;
+}
+
+void Xceed::QPP::generatingDispatchSequence() {
+
+    srand(seed[1]);
+    for (int i = 0; i < block_size; i++) {
+        dispatch_sequence.push_back((uint8_t)rand() % M);
+    }
 }
 
 

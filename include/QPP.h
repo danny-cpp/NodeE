@@ -36,12 +36,14 @@ namespace Xceed {
     protected:
         void generateMatrix();
         void generateInvMatrix();
+        void generatingDispatchSequence();
 
     private:
         int text_size;
 
         std::vector<std::vector<uint8_t>> pmat_list;
         std::vector<std::vector<uint8_t>> inv_pmat_list;
+        std::vector<uint8_t> dispatch_sequence;
 
         uint8_t* bit_rep_plain_text;
         uint8_t* bit_rep_cipher_text;

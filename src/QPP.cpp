@@ -4,14 +4,27 @@
 
 using namespace Xceed::Constants;
 
-Xceed::QPP::QPP() {
+Xceed::QPP::QPP(uint8_t *in_seed) {
+
+    bit_rep_plain_text = new uint8_t[block_size];
+    bit_rep_cipher_text = new uint8_t[block_size];
+    seed = new uint8_t[block_size];
+
+    memset(bit_rep_plain_text, 0, block_size);
+    memset(bit_rep_cipher_text, 0, block_size);
+    std::memcpy(seed, in_seed, block_size);
+
     generateMatrix();
     generateInvMatrix();
 }
 
 uint8_t* Xceed::QPP::encrypt() {
 
-    for (int i = 0, byte_ptr = 0; i < text_size; i++, byte_ptr++) {
+    for (int i = 0; i < block_size; i++) {
+        bit_rep_plain_text[i] ^= seed[i];
+    }
+
+    for (int i = 0, byte_ptr = 0; i < block_size; i++, byte_ptr++) {
 
         for (int right_side_offset = 8 - n, j = 0; right_side_offset >= 0; right_side_offset -= n, j++) {
 
@@ -33,12 +46,14 @@ uint8_t* Xceed::QPP::encrypt() {
         }
     }
 
-    return bit_rep_cipher_text;
+    uint8_t* result = new uint8_t[block_size];
+    std::memcpy(result, bit_rep_cipher_text, block_size);
+    return result;
 }
 
 
 uint8_t* Xceed::QPP::decrypt() {
-    for (int i = 0, byte_ptr = 0; i < text_size; i++, byte_ptr++) {
+    for (int i = 0, byte_ptr = 0; i < block_size; i++, byte_ptr++) {
 
         for (int right_side_offset = 8 - n, j = 0; right_side_offset >= 0; right_side_offset -= n, j++) {
 
@@ -60,7 +75,13 @@ uint8_t* Xceed::QPP::decrypt() {
         }
     }
 
-    return bit_rep_plain_text;
+    for (int i = 0; i < block_size; i++) {
+        bit_rep_plain_text[i] ^= seed[i];
+    }
+
+    uint8_t* result = new uint8_t[text_size];
+    std::memcpy(result, bit_rep_plain_text, text_size);
+    return result;
 }
 
 void Xceed::QPP::generateMatrix() {
@@ -111,9 +132,6 @@ void Xceed::QPP::setPlainText(std::string &plain_text) {
 
 void Xceed::QPP::setPlainText(const uint8_t *plain_text, int in_text_size) {
 
-    bit_rep_plain_text = new uint8_t[in_text_size];
-    bit_rep_cipher_text = new uint8_t[in_text_size];
-
     std::memcpy(bit_rep_plain_text, plain_text, in_text_size);
     this->text_size = in_text_size;
 
@@ -121,20 +139,14 @@ void Xceed::QPP::setPlainText(const uint8_t *plain_text, int in_text_size) {
 
 void Xceed::QPP::setSeed(const uint8_t* in_seed, int seed_size) {
 
-    seed = new uint8_t [seed_size];
     text_size = seed_size;
-
     std::memcpy(seed, in_seed, seed_size);
 }
 
 void Xceed::QPP::setCipherText(const uint8_t *cipher_text, int in_text_size) {
 
-    bit_rep_plain_text = new uint8_t[in_text_size];
-    bit_rep_cipher_text = new uint8_t[in_text_size];
-
     std::memcpy(bit_rep_cipher_text, cipher_text, in_text_size);
     this->text_size = in_text_size;
-
 }
 
 

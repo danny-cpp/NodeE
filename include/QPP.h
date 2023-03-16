@@ -13,7 +13,7 @@ namespace Xceed {
 
     class QPP {
     public:
-        QPP();
+        QPP(uint8_t *in_seed);
 
         ~QPP() {
             delete[] bit_rep_plain_text;
@@ -40,9 +40,7 @@ namespace Xceed {
     private:
         int text_size;
 
-        // uint8_t pmat_list[M][mat_size];
         std::vector<std::vector<uint8_t>> pmat_list;
-        // uint8_t inv_pmat_list[M][mat_size];
         std::vector<std::vector<uint8_t>> inv_pmat_list;
 
         uint8_t* bit_rep_plain_text;

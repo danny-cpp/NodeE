@@ -1,6 +1,8 @@
 #include "QPP.h"
 
 #include <cstring>
+#include<bits/stdc++.h>
+
 
 using namespace Xceed::Constants;
 
@@ -92,17 +94,30 @@ void Xceed::QPP::generateMatrix() {
     uint8_t m4[mat_size] = {0, 3, 2, 1};
     uint8_t m5[mat_size] = {0, 3, 1, 2};
 
-    pmat_list.emplace_back(std::vector<uint8_t>({1, 2, 0, 3}));
-    pmat_list.emplace_back(std::vector<uint8_t>({2, 1, 0, 3}));
-    pmat_list.emplace_back(std::vector<uint8_t>({1, 3, 2, 0}));
-    pmat_list.emplace_back(std::vector<uint8_t>({0, 3, 2, 1}));
-    pmat_list.emplace_back(std::vector<uint8_t>({0, 3, 1, 2}));
+    // pmat_list.emplace_back(std::vector<uint8_t>({1, 2, 0, 3}));
+    // pmat_list.emplace_back(std::vector<uint8_t>({2, 1, 0, 3}));
+    // pmat_list.emplace_back(std::vector<uint8_t>({1, 3, 2, 0}));
+    // pmat_list.emplace_back(std::vector<uint8_t>({0, 3, 2, 1}));
+    // pmat_list.emplace_back(std::vector<uint8_t>({0, 3, 1, 2}));
 
-    // std::memcpy(pmat_list[0], m1, sizeof(uint8_t)*mat_size);
-    // std::memcpy(pmat_list[1], m2, sizeof(uint8_t)*mat_size);
-    // std::memcpy(pmat_list[2], m3, sizeof(uint8_t)*mat_size);
-    // std::memcpy(pmat_list[3], m4, sizeof(uint8_t)*mat_size);
-    // std::memcpy(pmat_list[4], m5, sizeof(uint8_t)*mat_size);
+    srand(seed[0]);
+    std::vector<uint8_t> reference(mat_size);
+    for (int i = 0; i < mat_size; i++) {
+        reference[i] = i;
+    }
+
+    for (int k = 0; k < M; k++) {
+        for (int i = mat_size - 1; i > 0; i--) {
+            int j = random() % (i + 1);
+            {
+                uint8_t temp = reference[i];
+                reference[i] = reference[j];
+                reference[j] = temp;
+            }
+        }
+
+        pmat_list.emplace_back(reference);
+    }
 }
 
 void Xceed::QPP::generateInvMatrix() {

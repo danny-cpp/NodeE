@@ -1,12 +1,16 @@
 #include "QPP.h"
 
 #include <cstring>
-#include<bits/stdc++.h>
+#include "Statistics.h"
 
 
 using namespace Xceed::Constants;
 
 Xceed::QPP::QPP(uint8_t *in_seed) {
+
+    #ifdef _TRACK_STATS
+    Shell379::Utilities::TotalTiming<std::micro> totalTiming(&Statistics::setup_time);
+    #endif
 
     bit_rep_plain_text = new uint8_t[block_size];
     bit_rep_cipher_text = new uint8_t[block_size];
@@ -22,6 +26,10 @@ Xceed::QPP::QPP(uint8_t *in_seed) {
 }
 
 uint8_t* Xceed::QPP::encrypt() {
+
+    #ifdef _TRACK_STATS
+    Shell379::Utilities::TotalTiming<std::micro> totalTiming(&Statistics::encrypt_time);
+    #endif
 
     for (int i = 0; i < block_size; i++) {
         bit_rep_plain_text[i] ^= seed[i];
@@ -57,6 +65,10 @@ uint8_t* Xceed::QPP::encrypt() {
 
 
 uint8_t* Xceed::QPP::decrypt() {
+
+    #ifdef _TRACK_STATS
+    Shell379::Utilities::TotalTiming<std::micro> totalTiming(&Statistics::decrypt_time);
+    #endif
     for (int i = 0, byte_ptr = 0; i < block_size; i++, byte_ptr++) {
 
         for (int right_side_offset = 8 - n, j = 0; right_side_offset >= 0; right_side_offset -= n, j++) {
@@ -91,11 +103,11 @@ uint8_t* Xceed::QPP::decrypt() {
 
 void Xceed::QPP::generateMatrix() {
 
-    uint8_t m1[mat_size] = {1, 2, 0, 3};
-    uint8_t m2[mat_size] = {2, 1, 0, 3};
-    uint8_t m3[mat_size] = {1, 3, 2, 0};
-    uint8_t m4[mat_size] = {0, 3, 2, 1};
-    uint8_t m5[mat_size] = {0, 3, 1, 2};
+    // uint8_t m1[mat_size] = {1, 2, 0, 3};
+    // uint8_t m2[mat_size] = {2, 1, 0, 3};
+    // uint8_t m3[mat_size] = {1, 3, 2, 0};
+    // uint8_t m4[mat_size] = {0, 3, 2, 1};
+    // uint8_t m5[mat_size] = {0, 3, 1, 2};
 
     // pmat_list.emplace_back(std::vector<uint8_t>({1, 2, 0, 3}));
     // pmat_list.emplace_back(std::vector<uint8_t>({2, 1, 0, 3}));
@@ -173,6 +185,25 @@ void Xceed::QPP::generatingDispatchSequence() {
     for (int i = 0; i < block_size; i++) {
         dispatch_sequence.push_back((uint8_t)rand() % M);
     }
+}
+
+Xceed::QPP::~QPP() {
+    delete[] bit_rep_plain_text;
+    delete[] bit_rep_cipher_text;
+    delete[] seed;
+
+    #ifdef _TRACK_STATS
+    std::vector<double> summary;
+    summary.push_back(Statistics::encrypt_time);
+    summary.push_back(Statistics::decrypt_time);
+    summary.push_back(Statistics::setup_time);
+    std::string path = "../stat/stat.txt";
+    ProdCon::IOManagement ioManagement(path);
+    ioManagement.printSummary(summary);
+    ioManagement.release();
+
+    std::cout << "Logged" << std::endl;
+    #endif
 }
 
 

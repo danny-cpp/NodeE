@@ -1,0 +1,5 @@
+Summary:
+    Encrypt time        8.5
+    Decrypt time         7.6
+    Setup time            12
+Logged

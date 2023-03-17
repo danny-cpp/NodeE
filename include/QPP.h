@@ -5,6 +5,8 @@
 #include "array"
 
 #include "Constants.h"
+#include "Timing.h"
+#include "IOManagement.h"
 
 
 namespace Xceed {
@@ -15,11 +17,7 @@ namespace Xceed {
     public:
         QPP(uint8_t *in_seed);
 
-        ~QPP() {
-            delete[] bit_rep_plain_text;
-            delete[] bit_rep_cipher_text;
-            delete[] seed;
-        }
+        ~QPP();
 
         uint8_t* encrypt();
         uint8_t* decrypt();

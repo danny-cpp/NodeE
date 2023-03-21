@@ -35,7 +35,7 @@ NPROCS = $(shell grep -c 'processor' /proc/cpuinfo)
 MAKEFLAGS += -j$(NPROCS)
 
 # CONFIGURE RELEASE/DEBUG MODE HERE
-MODE := $(RELEASE)
+MODE := $(DEBUG)
 #=============================================================================
 
 

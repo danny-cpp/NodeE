@@ -80,8 +80,8 @@ int main() {
      */
     Xceed::QPP* qpp;
     uint8_t* seed = new uint8_t[Xceed::Constants::block_size];
-    uint8_t* cipher;
-    uint8_t* plain_text;
+//    uint8_t* cipher;
+//    uint8_t* plain_text;
 
 
     /**
@@ -105,7 +105,7 @@ int main() {
                 std::cout << "Handshaking is initiated by the Core Complex" << std::endl;
 
                 std::unique_ptr<InstructionToken> send_ID_token(new InstructionToken(0, 0, "T1", "SEND_ID", 1,
-                                               0, 1, std::to_string(nodeE_ID)));
+                                                                                     0, 1, std::to_string(nodeE_ID)));
 
                 {
                     std::unique_lock<std::mutex> lock{outgoing_lock};
@@ -113,29 +113,60 @@ int main() {
                     out_going_not_empty.notify_one();
                 }
 
-                std::unique_ptr<InstructionToken> seed_token(safeAcquire(&incoming_buffer, incoming_lock, incoming_not_empty));
+                std::unique_ptr<InstructionToken> seed_token(
+                        safeAcquire(&incoming_buffer, incoming_lock, incoming_not_empty));
                 if (seed_token->api_call != "SET_SEED") {
                     std::cout << "Error handshake sequence" << std::endl;
                     exit(-1);
                 }
                 std::cout << "Seed received" << std::endl;
-                std::memcpy(seed, (uint8_t*)seed_token->payload_content.c_str(), Xceed::Constants::block_size);
+                std::memcpy(seed, (uint8_t *) seed_token->payload_content.c_str(), Xceed::Constants::block_size);
+
+
+
 
                 InstructionToken complete_HS_token(nodeE_ID, 0, "T1", "HS_COMPLETE", 1,
-                                               0, 1, "");
-
+                                                   0, 1, "");
                 {
                     std::unique_lock<std::mutex> lock{outgoing_lock};
                     outgoing_buffer.push_back(complete_HS_token);
                     out_going_not_empty.notify_one();
                 }
 
-            }
-            else {
+                qpp = new Xceed::QPP(seed);
+                qpp->setSeed(seed, Xceed::Constants::block_size);
+
+            } else if (acquired->api_call == "ENCRYPT") {
+
+                std::cout << "Encrypt received" << std::endl;
+                const int text_size = acquired->payload_size;
+
+                /**
+                 * Begin Encryption
+                 */
+
+                qpp->setPlainText((uint8_t *) acquired->payload_content.c_str(), text_size);
+                uint8_t* cipher = qpp->encrypt();
+
+
+                std::unique_ptr<InstructionToken> send_encrypted_token(new InstructionToken(0, 0, "T1", "SEND_ID", 1,
+                                                                                     0, Xceed::Constants::block_size, std::string((const char *)cipher)));
+                /**
+                 * Sned SendEncryption
+                 */
+                {
+                    std::unique_lock<std::mutex> lock{outgoing_lock};
+                    outgoing_buffer.push_back(*send_encrypted_token);
+                    out_going_not_empty.notify_one();
+                }
+
+                delete[] cipher;
+            } else {
                 std::cout << "Message is acquired but API call is undefined" << std::endl;
             }
 
-            // std::cout << "Recovered text" << (char*)reversed << std::endl;
+
+
 
 
             // delete cipher;

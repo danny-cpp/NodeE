@@ -1,12 +1,19 @@
-#include "iostream"
-#include "string"
-#include "thread"
-#include "condition_variable"
-#include "chrono"
+#include <iostream>
+#include <string>
+#include <thread>
+#include <condition_variable>
+#include <chrono>
+#include <cstdio>
+#include <cstring>
 
 #include "QPP.h"
 #include "ClientNetworking.h"
 #include "InstructionToken.h"
+#include "ThreadSync.h"
+
+
+static const int core_complex_port = 64998;
+static const int nodeE_ID = 3003;
 
 
 int main() {
@@ -18,61 +25,111 @@ int main() {
                  "|_| |_|\\___/ \\__,_|\\___|_____|" << std::endl;
 
 
+    /**
+     * Buffers and sync techniques
+     */
     std::deque<ServerClient::InstructionToken> incoming_buffer;
-    std::mutex shared_pool_lock;
-    std::condition_variable not_empty_trigger;
+    std::mutex incoming_lock;
+    std::condition_variable incoming_not_empty;
 
-    std::thread producer([&] {
-        ServerClient::ClientNetworking connector(64998, "127.0.0.1", &incoming_buffer, shared_pool_lock, not_empty_trigger);
-    });
-
-    // const std::string json_string = R"({"api_call":"RECEIVED_ID","task_id":"2","interface_type":"T1","sender_id":1})";
-    // std::string err;
-    // json11::Json test_obj = json11::Json::parse(json_string, err);
-
-    // int tmp = test_obj["sender_id"].int_value();
-    // // int a = atoi(tmp.c_str());
-    // std::cout << tmp << std::endl;
-    // ServerClient::InstructionToken tk(json_string.c_str());
+    std::deque<ServerClient::InstructionToken> outgoing_buffer;
+    std::mutex outgoing_lock;
+    std::condition_variable out_going_not_empty;
 
 
-    // int text_size = 12;
-    uint8_t* seed = new uint8_t[Xceed::Constants::block_size];
-    for (int i = 0; i < Xceed::Constants::block_size; i++) {
-         seed[i] = (uint8_t)random();
+    /**
+     * Networking objects
+     */
+    int sock;
+    struct sockaddr_in socket_address;
+
+
+    /**
+     * Initialization of connection
+     */
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror("Fail to create socket");
+        exit(-1);
     }
 
+    socket_address.sin_family = AF_INET;
+    socket_address.sin_port = htons(core_complex_port);
+
+
+    /**
+     * Listening, parsing incoming data on this thread
+     */
+    std::thread incoming_thread([&] {
+        ServerClient::ClientNetworking::producing(sock, core_complex_port, "127.0.0.1", &incoming_buffer,
+                                                 incoming_lock, incoming_not_empty, socket_address);
+    });
+
+
+    /**
+     * Sending processed data on this thread
+     */
+    std::thread outgoing_thread([&] {
+       ServerClient::ClientNetworking::sending(sock, core_complex_port, "127.0.0.1", &outgoing_buffer,
+                                               outgoing_lock, out_going_not_empty, socket_address);
+    });
+
+
+    /**
+     * Data pointers
+     */
+    Xceed::QPP* qpp;
+    uint8_t* seed = new uint8_t[Xceed::Constants::block_size];
+    uint8_t* cipher;
+    uint8_t* plain_text;
+
+
+    /**
+     * Processing tokens on this thread
+     */
+    using namespace ServerClient;
+    using namespace Xceed::ThreadSync;
     std::thread consumer([&] {
         while (true) {
 
-            ServerClient::InstructionToken *acquired = nullptr;
-            {
-                std::unique_lock<std::mutex> lock{shared_pool_lock};
-                while (incoming_buffer.empty()) {
-                    not_empty_trigger.wait(lock, [&] {
-                        return !incoming_buffer.empty();
-                    });
-                }
-                acquired = new ServerClient::InstructionToken(incoming_buffer.front());
-                incoming_buffer.pop_front();
-            }
+            /**
+             * Polling for token
+             */
+            std::unique_ptr<InstructionToken> acquired(safeAcquire(&incoming_buffer, incoming_lock, incoming_not_empty));
 
-            uint8_t* reversed;
-            if (acquired->api_call == "ENCRYPT") {
-                std::cout << "Encrypt is called!" << std::endl;
-                uint8_t* cipher;
-                {
-                    Xceed::QPP qpp(seed);
-                    qpp.setPlainText((uint8_t*)acquired->payload_content.c_str(), acquired->payload_size);
-                    qpp.setSeed(seed, acquired->payload_size);
-                    cipher = qpp.encrypt();
-                }
+
+            /**
+             * Action menu switch case, as per API standard
+             */
+            if (acquired->api_call == "REQUEST_HANDSHAKE") {
+                std::cout << "Handshaking is initiated by the Core Complex" << std::endl;
+
+                std::unique_ptr<InstructionToken> send_ID_token(new InstructionToken(0, 0, "T1", "SEND_ID", 1,
+                                               0, 1, std::to_string(nodeE_ID)));
 
                 {
-                    Xceed::QPP qpp2(seed);
-                    // uint8_t ciphered[] = {0xa8, 0xc7, 0xde, 0xe9, 0x66, 0x64, 0x09, 0xfb, 0xeb, 0x41, 0x80, 0xc5};
-                    qpp2.setCipherText(cipher, acquired->payload_size);
-                    reversed = qpp2.decrypt();
+                    std::unique_lock<std::mutex> lock{outgoing_lock};
+                    outgoing_buffer.push_back(*send_ID_token);
+                    out_going_not_empty.notify_one();
+                }
+
+
+                InstructionToken *seed_token = safeAcquire(&incoming_buffer, incoming_lock, incoming_not_empty);
+                std::unique_ptr<InstructionToken> a (seed_token);
+                if (seed_token->api_call != "SET_SEED") {
+                    std::cout << "Error handshake sequence" << std::endl;
+                    exit(-1);
+                }
+                std::cout << "Seed received" << std::endl;
+                std::memcpy(seed, (uint8_t*)seed_token->payload_content.c_str(), Xceed::Constants::block_size);
+
+                InstructionToken complete_HS_token(nodeE_ID, 0, "T1", "HS_COMPLETE", 1,
+                                               0, 1, "");
+
+                {
+                    std::unique_lock<std::mutex> lock{outgoing_lock};
+                    outgoing_buffer.push_back(complete_HS_token);
+                    out_going_not_empty.notify_one();
                 }
 
             }
@@ -80,10 +137,11 @@ int main() {
                 std::cout << "Message is acquired but API call is undefined" << std::endl;
             }
 
-            std::cout << "Recovered text" << (char*)reversed << std::endl;
+            // std::cout << "Recovered text" << (char*)reversed << std::endl;
 
-            delete acquired;
-            std::this_thread::sleep_for(std::chrono::microseconds(1000));
+
+            // delete cipher;
+            // delete reversed;
         }
     });
 
@@ -110,9 +168,10 @@ int main() {
     //
     // delete[] seed;
     // delete[] cipher;
-    // delete[] reversed;
+    // delete[] plain_text;
 
-    producer.join();
+    incoming_thread.join();
+    outgoing_thread.join();
     consumer.join();
 
     return 0;

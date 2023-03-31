@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <sstream>
+#include <cstdio>
 #include "json11.hpp"
 
 
@@ -18,5 +20,11 @@ namespace ServerClient {
         std::string payload_content;
 
         InstructionToken(const char* json_string);
+
+        InstructionToken(int senderId, int taskId, std::string interfaceType, std::string apiCall,
+                         int payloadTotalFragments, int payloadFragNumber, int payloadSize,
+                         std::string payloadContent);
+
+        std::string dump();
     };
 }

@@ -16,12 +16,16 @@
 namespace ServerClient {
     class ClientNetworking {
     public:
-        ClientNetworking(int port_num, const std::string &IP_string, std::deque<InstructionToken> *incoming,
-                         std::mutex &lock_incoming, std::condition_variable &not_empty_trigger);
+        static void producing(int &sock, int port_num, const std::string &IP_string, std::deque<InstructionToken> *incoming,
+                         std::mutex &lock_incoming, std::condition_variable &not_empty_trigger,
+                         struct sockaddr_in &socket_address);
+
+        static void sending(int &sock, int port_num,
+                            const std::string &IP_string, std::deque<InstructionToken> *outgoing,
+                            std::mutex &lock_outgoing, std::condition_variable &not_empty_trigger,
+                            struct sockaddr_in &socket_address);
+
     private:
-        struct sockaddr_in socket_address;
-        int sock;
-        char* buffer;
-        int buffer_length = 4096;
+        const static int buffer_length = 4096;
     };
 }

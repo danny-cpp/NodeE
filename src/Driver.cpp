@@ -113,9 +113,7 @@ int main() {
                     out_going_not_empty.notify_one();
                 }
 
-
-                InstructionToken *seed_token = safeAcquire(&incoming_buffer, incoming_lock, incoming_not_empty);
-                std::unique_ptr<InstructionToken> a (seed_token);
+                std::unique_ptr<InstructionToken> seed_token(safeAcquire(&incoming_buffer, incoming_lock, incoming_not_empty));
                 if (seed_token->api_call != "SET_SEED") {
                     std::cout << "Error handshake sequence" << std::endl;
                     exit(-1);

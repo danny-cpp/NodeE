@@ -19,7 +19,7 @@ TARGET	:= bin/$(PRJNAME)
 # Do not remove -MP -MD flags. These are necessary for generating *.d files,
 # which contains rules for headers.
 # Change optimization flag (-OX) here. Add/Remove debug flag (-g) here.
-CFLAGS := -std=c++14 -MP -MD -pthread -pipe -fopenmp
+CFLAGS := -std=c++14 -MP -MD -pthread -pipe
 DEBUG := $(CFLAGS) -Wall -O0 -g -D_GLIBCXX_DEBUG -DDEBUG_MODE
 RELEASE := $(CFLAGS) -w -O3 -march=native -D_TRACK_STATS
 EXTREME := $(CFLAGS) -Ofast -frename-registers -fopenmp -D_GLIBCXX_PARALLEL -march=native # Don't even think about it

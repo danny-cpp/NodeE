@@ -16,6 +16,8 @@ static const int core_complex_port = 64998;
 static const int nodeE_ID = 3003;
 
 
+using namespace Xceed::ThreadSync;
+
 int main() {
 
     std::cout << "                 _      _____ \n"
@@ -24,17 +26,16 @@ int main() {
                  "| | | | (_) | (_| |  __/ |___ \n"
                  "|_| |_|\\___/ \\__,_|\\___|_____|" << std::endl;
 
-
     /**
      * Buffers and sync techniques
      */
-    std::deque<ServerClient::InstructionToken> incoming_buffer;
-    std::mutex incoming_lock;
-    std::condition_variable incoming_not_empty;
+    ConcurrentBlockingDeque<ServerClient::InstructionToken> incoming_buffer;
+    // std::mutex incoming_lock;
+    // std::condition_variable incoming_not_empty;
 
-    std::deque<ServerClient::InstructionToken> outgoing_buffer;
-    std::mutex outgoing_lock;
-    std::condition_variable out_going_not_empty;
+    ConcurrentBlockingDeque<ServerClient::InstructionToken> outgoing_buffer;
+    // std::mutex outgoing_lock;
+    // std::condition_variable out_going_not_empty;
 
 
     /**
@@ -62,7 +63,7 @@ int main() {
      */
     std::thread incoming_thread([&] {
         ServerClient::ClientNetworking::producing(sock, core_complex_port, "127.0.0.1", &incoming_buffer,
-                                                 incoming_lock, incoming_not_empty, socket_address);
+                                                  socket_address);
     });
 
 
@@ -71,7 +72,7 @@ int main() {
      */
     std::thread outgoing_thread([&] {
        ServerClient::ClientNetworking::sending(sock, core_complex_port, "127.0.0.1", &outgoing_buffer,
-                                               outgoing_lock, out_going_not_empty, socket_address);
+                                               socket_address);
     });
 
 
@@ -80,8 +81,6 @@ int main() {
      */
     Xceed::QPP* qpp;
     uint8_t* seed = new uint8_t[Xceed::Constants::block_size];
-    uint8_t* cipher;
-    uint8_t* plain_text;
 
 
     /**
@@ -95,7 +94,7 @@ int main() {
             /**
              * Polling for token
              */
-            std::unique_ptr<InstructionToken> acquired(safeAcquire(&incoming_buffer, incoming_lock, incoming_not_empty));
+            std::unique_ptr<InstructionToken> acquired(incoming_buffer.block_poll());
 
 
             /**
@@ -107,15 +106,11 @@ int main() {
                 std::unique_ptr<InstructionToken> send_ID_token(new InstructionToken(0, 0, "T1", "SEND_ID", 1,
                                                0, 1, std::to_string(nodeE_ID)));
 
-                {
-                    std::unique_lock<std::mutex> lock{outgoing_lock};
-                    outgoing_buffer.push_back(*send_ID_token);
-                    out_going_not_empty.notify_one();
-                }
+                outgoing_buffer.push_back(*send_ID_token);
 
 
-                InstructionToken *seed_token = safeAcquire(&incoming_buffer, incoming_lock, incoming_not_empty);
-                std::unique_ptr<InstructionToken> a (seed_token);
+                std::unique_ptr<InstructionToken>seed_token(incoming_buffer.block_poll());
+
                 if (seed_token->api_call != "SET_SEED") {
                     std::cout << "Error handshake sequence" << std::endl;
                     exit(-1);
@@ -126,49 +121,34 @@ int main() {
                 InstructionToken complete_HS_token(nodeE_ID, 0, "T1", "HS_COMPLETE", 1,
                                                0, 1, "");
 
-                {
-                    std::unique_lock<std::mutex> lock{outgoing_lock};
-                    outgoing_buffer.push_back(complete_HS_token);
-                    out_going_not_empty.notify_one();
-                }
+                outgoing_buffer.push_back(complete_HS_token);
 
+            }
+            else if (acquired->api_call == "ENCRYPT") {
+                qpp->setPlainText(acquired->payload_content);
+                const char * result =(const char *)qpp->encrypt();
+
+                std::unique_ptr<InstructionToken> encrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, Xceed::Constants::block_size, result));
+
+                outgoing_buffer.push_back(*encrypted);
+                delete result;
+            }
+            else if (acquired->api_call == "DECRYPT") {
+                qpp->setCipherText((uint8_t*)acquired->payload_content.c_str(), acquired->payload_size);
+                const char * result =(const char *)qpp->decrypt();
+
+                std::unique_ptr<InstructionToken> decrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, qpp->getStringLength(), result));
+
+                outgoing_buffer.push_back(*decrypted);
+                delete result;
             }
             else {
                 std::cout << "Message is acquired but API call is undefined" << std::endl;
             }
-
-            // std::cout << "Recovered text" << (char*)reversed << std::endl;
-
-
-            // delete cipher;
-            // delete reversed;
         }
     });
 
-    //
-    //
-    // uint8_t temp[] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0b00100000, 0b01010111, 0b01101111, 0b01110010, 0b01101100, 0b01100100};
-    // // Expected cipher a8 c7 de e9   66 64 09 fb   eb 41 80 c5
-    //
-    // uint8_t* cipher;
-    // {
-    //     Xceed::QPP qpp(seed);
-    //     qpp.setPlainText(temp, text_size);
-    //     qpp.setSeed(seed, text_size);
-    //     cipher = qpp.encrypt();
-    // }
-    //
-    // uint8_t* reversed;
-    // {
-    //     Xceed::QPP qpp2(seed);
-    //     // uint8_t ciphered[] = {0xa8, 0xc7, 0xde, 0xe9, 0x66, 0x64, 0x09, 0xfb, 0xeb, 0x41, 0x80, 0xc5};
-    //     qpp2.setCipherText(cipher, text_size);
-    //     reversed = qpp2.decrypt();
-    // }
-    //
-    // delete[] seed;
-    // delete[] cipher;
-    // delete[] plain_text;
+    delete[] seed;
 
     incoming_thread.join();
     outgoing_thread.join();

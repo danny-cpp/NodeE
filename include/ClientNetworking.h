@@ -11,18 +11,18 @@
 
 
 #include "InstructionToken.h"
+#include "ThreadSync.h"
 
 
 namespace ServerClient {
     class ClientNetworking {
     public:
-        static void producing(int &sock, int port_num, const std::string &IP_string, std::deque<InstructionToken> *incoming,
-                         std::mutex &lock_incoming, std::condition_variable &not_empty_trigger,
-                         struct sockaddr_in &socket_address);
+        static void producing(int &sock, int port_num, const std::string &IP_string,
+                              Xceed::ThreadSync::ConcurrentBlockingDeque<InstructionToken> *incoming,
+                              struct sockaddr_in &socket_address);
 
-        static void sending(int &sock, int port_num,
-                            const std::string &IP_string, std::deque<InstructionToken> *outgoing,
-                            std::mutex &lock_outgoing, std::condition_variable &not_empty_trigger,
+        static void sending(int &sock, int port_num, const std::string &IP_string,
+                            Xceed::ThreadSync::ConcurrentBlockingDeque<InstructionToken> *outgoing,
                             struct sockaddr_in &socket_address);
 
     private:

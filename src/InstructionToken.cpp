@@ -1,6 +1,7 @@
 #include "InstructionToken.h"
 #include <iostream>
 #include <utility>
+#include <iomanip>
 
 ServerClient::InstructionToken::InstructionToken(const char *json_string) {
 
@@ -59,32 +60,24 @@ ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::
                         payloadFragNumber),
                 payload_size(payloadSize),
                 payload_content(std::move(payloadContent)),
-                payload_content_bytesize(payloadContentBytesize)
+                payload_content_bytesize(payloadContentBytesize),
+                payload_hexstring("")
 {
     // payload_hexstring = std::string("");
     std::cout << payload_content_bytesize << std::endl;
     std::cout << payload_content[22] << std::endl;
+    std::stringstream stream;
     for(int i = 0; i < payload_content_bytesize; i++) {
-        std::stringstream ss;
-        uint8_t b = (payload_content[i] & 0xF0) >> 4;
-        std::cout << b << std::endl;
-        ss << b;
-        std::string s1;
-        ss >> std::hex >> s1;
-        std::cout << s1 << std::endl;
-        payload_hexstring.append(s1);
-        b = (payload_content[i] & 0x0F);
-        std::cout << b << std::endl;
-        ss << b;
-        std::string s2;
-        ss >> std::hex >> s2;
-        std::cout << s2 << std::endl;
-        payload_hexstring.append(s2);
-        std::cout << i << std::endl;
+        stream << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(payload_content[i]);
     }
+    std::string payload_hexstring1 = stream.str();
+    std::cout << payload_hexstring1 << std::endl;
+    payload_hexstring = payload_hexstring1;
+
+
 
 }
-
+// 
 ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::string  interfaceType,
                                                  std::string apiCall, int payloadTotalFragments,
                                                  int payloadFragNumber, int payloadSize,

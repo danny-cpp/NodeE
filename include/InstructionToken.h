@@ -17,7 +17,7 @@ namespace ServerClient {
         int payload_total_fragments;
         int payload_frag_number;
         int payload_size;
-        std::string payload_hexstring = "";
+        std::string payload_hexstring;
         uint8_t *payload_content;
 
         InstructionToken(const char* json_string);

@@ -1,5 +1,5 @@
 #include "InstructionToken.h"
-
+#include <iostream>
 #include <utility>
 
 ServerClient::InstructionToken::InstructionToken(const char *json_string) {
@@ -61,14 +61,26 @@ ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::
                 payload_content(std::move(payloadContent)),
                 payload_content_bytesize(payloadContentBytesize)
 {
+    // payload_hexstring = std::string("");
+    std::cout << payload_content_bytesize << std::endl;
+    std::cout << payload_content[22] << std::endl;
     for(int i = 0; i < payload_content_bytesize; i++) {
         std::stringstream ss;
         uint8_t b = (payload_content[i] & 0xF0) >> 4;
+        std::cout << b << std::endl;
         ss << b;
-        ss >> std::hex >> payload_hexstring[2*i];
+        std::string s1;
+        ss >> std::hex >> s1;
+        std::cout << s1 << std::endl;
+        payload_hexstring.append(s1);
         b = (payload_content[i] & 0x0F);
+        std::cout << b << std::endl;
         ss << b;
-        ss >> std::hex >> payload_hexstring[(2*i)+1];
+        std::string s2;
+        ss >> std::hex >> s2;
+        std::cout << s2 << std::endl;
+        payload_hexstring.append(s2);
+        std::cout << i << std::endl;
     }
 
 }

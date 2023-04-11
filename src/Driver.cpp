@@ -129,8 +129,11 @@ int main() {
             else if (acquired->api_call == "ENCRYPT") {
                 qpp->setPlainText(acquired->payload_hexstring);
                 uint8_t * result = qpp->encrypt();
-
-                std::unique_ptr<InstructionToken> encrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, qpp->getStringLength(), result, qpp->getStringLength()/2));
+                for(int i = 0; i < qpp->getStringLength(); i++) {
+                    std::cout << result[i];
+                }
+                std::cout << std::endl;
+                std::unique_ptr<InstructionToken> encrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, qpp->getStringLength(), result, qpp->getStringLength()));
 
                 outgoing_buffer.push_back(*encrypted);
                 delete result;
@@ -139,7 +142,7 @@ int main() {
                 qpp->setCipherText((uint8_t*)acquired->payload_hexstring.c_str(), acquired->payload_size);
                 uint8_t * result = qpp->decrypt();
 
-                std::unique_ptr<InstructionToken> decrypted(new InstructionToken(nodeE_ID, 0, "T1", "DECRYPT", 1, 0, qpp->getStringLength(), result, qpp->getStringLength()/2));
+                std::unique_ptr<InstructionToken> decrypted(new InstructionToken(nodeE_ID, 0, "T1", "DECRYPT", 1, 0, qpp->getStringLength(), result, qpp->getStringLength()));
 
                 outgoing_buffer.push_back(*decrypted);
                 delete result;

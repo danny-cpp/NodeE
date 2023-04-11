@@ -2,7 +2,7 @@
 
 #include <cstring>
 #include "Statistics.h"
-
+#include <iostream>
 
 using namespace Xceed::Constants;
 
@@ -158,6 +158,9 @@ void Xceed::QPP::setPlainText(std::string &plain_text) {
 
     std::memcpy(bit_rep_plain_text, plain_text.c_str(), plain_text.size());
     this->text_size = (int)plain_text.size();
+    for(int i = 0; i < this->text_size; i++) {
+        std::cout << bit_rep_plain_text[i];
+    }
 }
 
 void Xceed::QPP::setPlainText(const uint8_t *plain_text, int in_text_size) {

@@ -26,11 +26,17 @@ namespace ServerClient {
                          int payloadTotalFragments, int payloadFragNumber, int payloadSize,
                          uint8_t *payloadContent, int payloadContentBytesize);
 
+        InstructionToken(int senderId, int taskId, std::string  interfaceType,
+                                                 std::string apiCall, int payloadTotalFragments,
+                                                 int payloadFragNumber, int payloadSize,
+                                                 std::string payloadContent);
+
+
         std::string dump();
 
-        ~InstructionToken() {
-            delete[] payload_content;
-        }
+        // ~InstructionToken() {
+        //     delete[] payload_content;
+        // }
 
     private:
         int payload_content_bytesize;

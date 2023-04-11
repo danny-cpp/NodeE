@@ -47,10 +47,36 @@ std::string ServerClient::InstructionToken::dump() {
 }
 
 ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::string  interfaceType,
+    std::string apiCall, int payloadTotalFragments,int payloadFragNumber, int payloadSize,
+        uint8_t *payloadContent, int payloadContentBytesize) : 
+                sender_id(senderId),
+                task_id(taskId),
+                interface_type(std::move(interfaceType)),
+                api_call(std::move(apiCall)),
+                payload_total_fragments(
+                        payloadTotalFragments),
+                payload_frag_number(
+                        payloadFragNumber),
+                payload_size(payloadSize),
+                payload_content(std::move(payloadContent)),
+                payload_content_bytesize(payloadContentBytesize)
+{
+    for(int i = 0; i < payload_content_bytesize; i++) {
+        std::stringstream ss;
+        uint8_t b = (payload_content[i] & 0xF0) >> 4;
+        ss << b;
+        ss >> std::hex >> payload_hexstring[2*i];
+        b = (payload_content[i] & 0x0F);
+        ss << b;
+        ss >> std::hex >> payload_hexstring[(2*i)+1];
+    }
+
+}
+
+ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::string  interfaceType,
                                                  std::string apiCall, int payloadTotalFragments,
                                                  int payloadFragNumber, int payloadSize,
-                                                 uint8_t *payloadContent, int payloadContentBytesize) : 
-                                                                                      sender_id(senderId),
+                                                 std::string payloadContent) : sender_id(senderId),
                                                                                       task_id(taskId),
                                                                                       interface_type(std::move(interfaceType)),
                                                                                       api_call(std::move(apiCall)),
@@ -59,13 +85,4 @@ ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::
                                                                                       payload_frag_number(
                                                                                               payloadFragNumber),
                                                                                       payload_size(payloadSize),
-                                                                                      payload_content(std::move(payloadContent)),
-                                                                                      payload_content_bytesize(payloadContentBytesize))
-{
-    // for(int i = 0; i < payload_content_bytesize; i++) {
-    //     std::stringstream ss;
-
-    // }
-    
-
-}
+                                                                                      payload_hexstring(std::move(payloadContent)) {}

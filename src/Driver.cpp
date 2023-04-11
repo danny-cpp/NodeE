@@ -116,28 +116,30 @@ int main() {
                     exit(-1);
                 }
                 std::cout << "Seed received" << std::endl;
-                std::memcpy(seed, (uint8_t*)seed_token->payload_content.c_str(), Xceed::Constants::block_size);
+                std::memcpy(seed, (uint8_t*)seed_token->payload_hexstring.c_str(), Xceed::Constants::block_size);
 
                 InstructionToken complete_HS_token(nodeE_ID, 0, "T1", "HS_COMPLETE", 1,
                                                0, 1, "");
 
                 outgoing_buffer.push_back(complete_HS_token);
 
+                qpp = new Xceed::QPP(seed);
+
             }
             else if (acquired->api_call == "ENCRYPT") {
-                qpp->setPlainText(acquired->payload_content);
-                const char * result =(const char *)qpp->encrypt();
+                qpp->setPlainText(acquired->payload_hexstring);
+                uint8_t * result = qpp->encrypt();
 
-                std::unique_ptr<InstructionToken> encrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, Xceed::Constants::block_size, result));
+                std::unique_ptr<InstructionToken> encrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, qpp->getStringLength(), result, qpp->getStringLength()/2));
 
                 outgoing_buffer.push_back(*encrypted);
                 delete result;
             }
             else if (acquired->api_call == "DECRYPT") {
-                qpp->setCipherText((uint8_t*)acquired->payload_content.c_str(), acquired->payload_size);
-                const char * result =(const char *)qpp->decrypt();
+                qpp->setCipherText((uint8_t*)acquired->payload_hexstring.c_str(), acquired->payload_size);
+                uint8_t * result = qpp->decrypt();
 
-                std::unique_ptr<InstructionToken> decrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, qpp->getStringLength(), result));
+                std::unique_ptr<InstructionToken> decrypted(new InstructionToken(nodeE_ID, 0, "T1", "DECRYPT", 1, 0, qpp->getStringLength(), result, qpp->getStringLength()/2));
 
                 outgoing_buffer.push_back(*decrypted);
                 delete result;

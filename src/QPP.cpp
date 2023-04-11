@@ -172,7 +172,7 @@ void Xceed::QPP::setSeed(const uint8_t* in_seed, int seed_size) {
 
 void Xceed::QPP::setCipherText(const uint8_t *cipher_text, int in_text_size) {
 
-    std::memcpy(bit_rep_cipher_text, cipher_text, in_text_size);
+    std::memcpy(bit_rep_cipher_text, cipher_text, block_size);
     this->text_size = in_text_size;
 }
 

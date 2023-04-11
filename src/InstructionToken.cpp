@@ -59,17 +59,17 @@ ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::
 
 ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::string interfaceType,
                                                  std::string apiCall, int payloadTotalFragments, int payloadFragNumber,
-                                                 int payloadSize, uint8_t *payloadContent, int payloadByteLength) : sender_id(senderId),
-                                                                                                                    task_id(taskId),
-                                                                                                                    interface_type(std::move(interfaceType)),
-                                                                                                                    api_call(std::move(apiCall)),
-                                                                                                                    payload_total_fragments(
+                                                 int payloadSize, std::shared_ptr<uint8_t> payloadContent, int payloadByteLength) : sender_id(senderId),
+                                                                                                                                    task_id(taskId),
+                                                                                                                                    interface_type(std::move(interfaceType)),
+                                                                                                                                    api_call(std::move(apiCall)),
+                                                                                                                                    payload_total_fragments(
                                                                                                                             payloadTotalFragments),
-                                                                                                                    payload_frag_number(
+                                                                                                                                    payload_frag_number(
                                                                                                                             payloadFragNumber),
-                                                                                                                    payload_size(payloadSize),
-                                                                                                                    payload_content(payloadContent),
-                                                                                                                    payload_byte_length(payloadByteLength) {
+                                                                                                                                    payload_size(payloadSize),
+                                                                                                                                    payload_content(payloadContent),
+                                                                                                                                    payload_byte_length(payloadByteLength) {
 
 
     payload_hex_string = byteStreamToHexString(payload_content, payload_byte_length);

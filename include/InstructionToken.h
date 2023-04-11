@@ -30,7 +30,7 @@ namespace ServerClient {
 
         InstructionToken(int senderId, int taskId, std::string interfaceType, std::string apiCall,
                          int payloadTotalFragments, int payloadFragNumber, int payloadSize,
-                         uint8_t* payloadContent, int payloadByteLength);
+                         std::shared_ptr<uint8_t> payloadContent, int payloadByteLength);
 
 
         static std::string byteStreamToHexString(std::shared_ptr<uint8_t> byte_stream, int count);

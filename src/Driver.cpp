@@ -129,24 +129,21 @@ int main() {
             }
             else if (acquired.api_call == "ENCRYPT") {
                 qpp->setPlainText(acquired.payload_content.get(), acquired.payload_size);
-                uint8_t* result = qpp->encrypt();
-                qpp->decrypt();
+                std::shared_ptr<uint8_t> result(qpp->encrypt());
 
                 InstructionToken encrypted = InstructionToken(nodeE_ID, 0, "T1", "SEND_ENCRYPTED", 1, 0,
                                                                                  qpp->getStringLength(), result, Xceed::Constants::block_size);
 
                 outgoing_buffer.push_back(encrypted);
-                delete result;
             }
             else if (acquired.api_call == "DECRYPT") {
                 qpp->setCipherText(acquired.payload_content.get(), acquired.payload_size);
-                uint8_t* result = qpp->decrypt();
+                std::shared_ptr<uint8_t> result(qpp->decrypt());
 
                 InstructionToken decrypted = InstructionToken(nodeE_ID, 0, "T1", "SEND_DECRYPTED", 1, 0,
                                                                                  qpp->getStringLength(), result, qpp->getStringLength());
 
                 outgoing_buffer.push_back(decrypted);
-                delete result;
             }
             else {
                 std::cout << "Message is acquired but API call is undefined" << std::endl;

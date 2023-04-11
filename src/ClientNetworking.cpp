@@ -40,11 +40,10 @@ void ServerClient::ClientNetworking::sending(int &sock, int port_num, const std:
 
     while(true) {
 
-        InstructionToken* acquired = outgoing->block_poll();
-        std::string temp = acquired->dump();
+        InstructionToken acquired = outgoing->block_poll();
+        std::string temp = acquired.dump();
         write(sock, temp.c_str(), temp.size());
 
-        delete acquired;
     }
 
 }

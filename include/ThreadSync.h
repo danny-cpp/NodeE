@@ -12,7 +12,7 @@ namespace Xceed {
         public:
             ConcurrentBlockingDeque<E>() = default;
 
-            E* block_poll() {
+            E block_poll() {
                 std::unique_lock<std::mutex> lock{m};
                 while (d.empty()) {
                     not_empty_trigger.wait(lock, [&] {
@@ -20,7 +20,7 @@ namespace Xceed {
                     });
                 }
 
-                E* result = new E(d.front());
+                E result = (E)d.front();
                 d.pop_front();
                 return result;
             }

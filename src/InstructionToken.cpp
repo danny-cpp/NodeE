@@ -76,25 +76,28 @@ ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::
 
 }
 
-std::string ServerClient::InstructionToken::byteStreamToHexString(uint8_t *byte_stream, int count) {
+std::string ServerClient::InstructionToken::byteStreamToHexString(std::shared_ptr<uint8_t> byte_stream, int count) {
 
     std::stringstream stringbuilder;
 
     for (int i = 0; i < count; i++) {
         std::stringstream ss;
-        ss << std::hex << std::setw(2) << std::setfill('0') << byte_stream[i];
-        stringbuilder << ss.str();
+        uint8_t a_byte = byte_stream.get()[i];
+
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)a_byte;
+        std::string temp = ss.str();
+        stringbuilder << temp;
     }
 
     return stringbuilder.str();
 }
 
-uint8_t *ServerClient::InstructionToken::hexStringToByteStream(std::string &hex_representation) {
+std::shared_ptr<uint8_t> ServerClient::InstructionToken::hexStringToByteStream(std::string &hex_representation) {
 
-    uint8_t* result = new uint8_t[hex_representation.size() / 2];
+    auto result = std::shared_ptr<uint8_t>(new uint8_t [hex_representation.size() / 2]);
     for (int i = 0; i < hex_representation.size(); i += 2) {
         uint8_t a_byte = (uint8_t) strtoul(hex_representation.substr(i, 2).c_str(), nullptr, 16);
-        result[i] = a_byte;
+        result.get()[i/2] = a_byte;
     }
 
     return result;

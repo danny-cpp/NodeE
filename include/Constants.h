@@ -7,6 +7,6 @@ namespace Xceed {
         const int mat_size = 1 << n;
 
         const uint8_t mask = ((uint8_t)(-1)) << (8 - n);
-        const uint16_t block_size = 1024;                    // In byte
+        const uint16_t block_size = 20;                    // In byte
     }
 }

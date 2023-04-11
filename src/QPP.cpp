@@ -75,7 +75,7 @@ uint8_t* Xceed::QPP::decrypt() {
 
             uint8_t plain_text_byte_mask = 0;
             int moving_mask = mask >> (n * j);
-            int dispatch_index = ((i * (8/n)) + j) % M;
+            int dispatch_index = ((i * (8/n)) + j) % block_size;
             dispatch_index = dispatch_sequence[dispatch_index];
 
             // Extracting

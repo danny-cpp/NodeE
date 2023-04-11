@@ -19,7 +19,7 @@ namespace ServerClient {
         int payload_frag_number;
         int payload_size;
         std::string payload_hex_string;
-        uint8_t* payload_content;
+        std::shared_ptr<uint8_t> payload_content;
         int payload_byte_length;
 
         InstructionToken(const char* json_string);
@@ -32,13 +32,10 @@ namespace ServerClient {
                          int payloadTotalFragments, int payloadFragNumber, int payloadSize,
                          uint8_t* payloadContent, int payloadByteLength);
 
-        ~InstructionToken() {
-            delete[] payload_content;
-        }
 
-        static std::string byteStreamToHexString(uint8_t* byte_stream, int count);
+        static std::string byteStreamToHexString(std::shared_ptr<uint8_t> byte_stream, int count);
 
-        static uint8_t* hexStringToByteStream(std::string &hex_representation);
+        static std::shared_ptr<uint8_t> hexStringToByteStream(std::string &hex_representation);
 
         std::string dump();
     };

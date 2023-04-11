@@ -153,9 +153,6 @@ int Xceed::QPP::getStringLength() {
 
 void Xceed::QPP::setPlainText(std::string &plain_text) {
 
-    bit_rep_plain_text = new uint8_t[plain_text.size()];
-    bit_rep_cipher_text = new uint8_t[plain_text.size()];
-
     std::memcpy(bit_rep_plain_text, plain_text.c_str(), plain_text.size());
     this->text_size = (int)plain_text.size();
 }

@@ -14,7 +14,10 @@ ServerClient::InstructionToken::InstructionToken(const char *json_string) {
     payload_total_fragments = test_obj["payload_total_fragments"].int_value();
     payload_frag_number = test_obj["payload_frag_number"].int_value();
     payload_size = test_obj["payload_size"].int_value();
-    payload_content = test_obj["payload_content"].string_value();
+    payload_hex_string = test_obj["payload_content"].string_value();
+
+    payload_byte_length = (int)payload_hex_string.size() / 2;
+    payload_content = hexStringToByteStream(payload_hex_string);
 }
 
 std::string ServerClient::InstructionToken::dump() {
@@ -29,7 +32,7 @@ std::string ServerClient::InstructionToken::dump() {
                     << "\"payload_total_fragments\""    << ":"              << this->payload_total_fragments    << ","
                     << "\"payload_frag_number\""        << ":"              << this->payload_frag_number        << ","
                     << "\"payload_size\""               << ":"              << this->payload_size               << ","
-                    << "\"payload_content\""            << ":" << "\""      << this->payload_content << "\""
+                    << "\"payload_content\""            << ":" << "\""      << this->payload_hex_string << "\""
                     << "}\n";
 
     return stringbuilder.str();
@@ -38,7 +41,7 @@ std::string ServerClient::InstructionToken::dump() {
 ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::string  interfaceType,
                                                  std::string apiCall, int payloadTotalFragments,
                                                  int payloadFragNumber, int payloadSize,
-                                                 std::string payloadContent) : sender_id(senderId),
+                                                 std::string &payloadHexString) : sender_id(senderId),
                                                                                       task_id(taskId),
                                                                                       interface_type(std::move(interfaceType)),
                                                                                       api_call(std::move(apiCall)),
@@ -47,4 +50,52 @@ ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::
                                                                                       payload_frag_number(
                                                                                               payloadFragNumber),
                                                                                       payload_size(payloadSize),
-                                                                                      payload_content(std::move(payloadContent)) {}
+                                                                                      payload_hex_string(std::move(payloadHexString)) {
+
+    payload_byte_length = (int)payload_hex_string.size() / 2;
+
+    payload_content = hexStringToByteStream(payload_hex_string);
+}
+
+ServerClient::InstructionToken::InstructionToken(int senderId, int taskId, std::string interfaceType,
+                                                 std::string apiCall, int payloadTotalFragments, int payloadFragNumber,
+                                                 int payloadSize, uint8_t *payloadContent, int payloadByteLength) : sender_id(senderId),
+                                                                                                                    task_id(taskId),
+                                                                                                                    interface_type(std::move(interfaceType)),
+                                                                                                                    api_call(std::move(apiCall)),
+                                                                                                                    payload_total_fragments(
+                                                                                                                            payloadTotalFragments),
+                                                                                                                    payload_frag_number(
+                                                                                                                            payloadFragNumber),
+                                                                                                                    payload_size(payloadSize),
+                                                                                                                    payload_content(payloadContent),
+                                                                                                                    payload_byte_length(payloadByteLength) {
+
+
+    payload_hex_string = byteStreamToHexString(payload_content, payload_byte_length);
+
+}
+
+std::string ServerClient::InstructionToken::byteStreamToHexString(uint8_t *byte_stream, int count) {
+
+    std::stringstream stringbuilder;
+
+    for (int i = 0; i < count; i++) {
+        std::stringstream ss;
+        ss << std::hex << std::setw(2) << std::setfill('0') << byte_stream[i];
+        stringbuilder << ss.str();
+    }
+
+    return stringbuilder.str();
+}
+
+uint8_t *ServerClient::InstructionToken::hexStringToByteStream(std::string &hex_representation) {
+
+    uint8_t* result = new uint8_t[hex_representation.size() / 2];
+    for (int i = 0; i < hex_representation.size(); i += 2) {
+        uint8_t a_byte = (uint8_t) strtoul(hex_representation.substr(i, 2).c_str(), nullptr, 16);
+        result[i] = a_byte;
+    }
+
+    return result;
+}

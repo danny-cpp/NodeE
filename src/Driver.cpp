@@ -103,8 +103,9 @@ int main() {
             if (acquired->api_call == "REQUEST_HANDSHAKE") {
                 std::cout << "Handshaking is initiated by the Core Complex" << std::endl;
 
+                std::string temp = "03000003";
                 std::unique_ptr<InstructionToken> send_ID_token(new InstructionToken(0, 0, "T1", "SEND_ID", 1,
-                                               0, 1, std::to_string(nodeE_ID)));
+                                               0, 4, temp));
 
                 outgoing_buffer.push_back(*send_ID_token);
 
@@ -116,28 +117,31 @@ int main() {
                     exit(-1);
                 }
                 std::cout << "Seed received" << std::endl;
-                std::memcpy(seed, (uint8_t*)seed_token->payload_content.c_str(), Xceed::Constants::block_size);
+                std::memcpy(seed, seed_token->payload_content, Xceed::Constants::block_size);
 
+                std::string temp2 = "";
                 InstructionToken complete_HS_token(nodeE_ID, 0, "T1", "HS_COMPLETE", 1,
-                                               0, 1, "");
+                                               0, 1, temp2);
 
                 outgoing_buffer.push_back(complete_HS_token);
 
             }
             else if (acquired->api_call == "ENCRYPT") {
-                qpp->setPlainText(acquired->payload_content);
-                const char * result =(const char *)qpp->encrypt();
+                qpp->setPlainText(acquired->payload_content, acquired->payload_size);
+                uint8_t* result = qpp->encrypt();
 
-                std::unique_ptr<InstructionToken> encrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, Xceed::Constants::block_size, result));
+                std::unique_ptr<InstructionToken> encrypted(new InstructionToken(nodeE_ID, 0, "T1", "SEND_ENCRYPTED", 1, 0,
+                                                                                 qpp->getStringLength(), result, Xceed::Constants::block_size));
 
                 outgoing_buffer.push_back(*encrypted);
                 delete result;
             }
             else if (acquired->api_call == "DECRYPT") {
-                qpp->setCipherText((uint8_t*)acquired->payload_content.c_str(), acquired->payload_size);
-                const char * result =(const char *)qpp->decrypt();
+                qpp->setCipherText(acquired->payload_content, acquired->payload_size);
+                uint8_t* result = qpp->decrypt();
 
-                std::unique_ptr<InstructionToken> decrypted(new InstructionToken(nodeE_ID, 0, "T1", "ENCRYPT", 1, 0, qpp->getStringLength(), result));
+                std::unique_ptr<InstructionToken> decrypted(new InstructionToken(nodeE_ID, 0, "T1", "SEND_DECRYPTED", 1, 0,
+                                                                                 qpp->getStringLength(), result, qpp->getStringLength()));
 
                 outgoing_buffer.push_back(*decrypted);
                 delete result;
